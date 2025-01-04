@@ -4,6 +4,10 @@ import pyperclip
 from bs4 import BeautifulSoup
 
 
+def split_string(s, n):
+    return [s[i:i+n] for i in range(0, len(s), n)]
+
+
 def get_clipboard_text():
     """
     Retrieve the current text from the clipboard.

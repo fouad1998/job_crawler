@@ -3,19 +3,23 @@ import time
 from seleniumbase import SB
 
 from database import (close_connection, connect_db,
-                      create_database_if_not_exists)
+                      create_database_if_not_exists, create_tables, schema_sql)
 from helpers import (get_clipboard_text, html_to_formatted_text, parse_json,
-                     remove_markers)
+                     remove_markers, split_string)
 from prompts import make_prompt
-from queries import (add_link, check_link_exists, get_next_unvisited_link,
-                     update_link)
+from queries import (add_link, check_link_exists, get_latest_resume,
+                     get_next_unvisited_link, update_link)
 
 
 def main():
     # Database connection
     create_database_if_not_exists()
     db_connection = connect_db()
-    
+    create_tables(db_connection, schema_sql)
+    latest_resume = get_latest_resume(db_connection)
+    if latest_resume is None:
+        raise "Please add a resume to the database"
+
     try:
         with SB(uc=True, test=True, locale_code="en", ad_block=True) as sb:
             page = 1
@@ -63,27 +67,39 @@ def main():
                     break
                 
                 sb.activate_cdp_mode(url)
-                
+
+                # check if the page is removed
+                page_removed_indicator_text = "Cette offre d'emploi n’est plus disponible."
+                sb.cdp.find_elements_by_text(page_removed_indicator_text)
+                 
                 # job title
                 job_title = sb.cdp.get_title()
                 
                 
                 # job description
-                job_description_container_selector = "/html/body/main/div[3]/div[3]/div[1]/div[2]/div"
-                job_description_container = sb.cdp.find_element(job_description_container_selector)
                 job_description = ""
-                for element in job_description_container.query_selector_all("& > *"):
-                    job_description += element.get_html()
-                    job_description += "\n"
-                
-                job_description = html_to_formatted_text(job_description)
-                
+                try:
+                    job_description_container_selector = "/html/body/main/div[3]/div[3]/div[1]/div[2]/div"
+                    job_description_container = sb.cdp.find_element(job_description_container_selector)
+                    for element in job_description_container.query_selector_all("& > *"):
+                        job_description += element.get_html()
+                        job_description += "\n"
+                    
+                    job_description = html_to_formatted_text(job_description)
+                except Exception as error:
+                    print("Error in getting job description:", error)
+                    page_removed_indicator_text = "Cette offre d'emploi n’est plus disponible."
+                    sb.cdp.find_elements_by_text(page_removed_indicator_text)
+                    print("Job removed")
+                    update_link(db_connection, url=url, visited=True)
+                    continue
                 
                 sb.sleep(2)
                 
                 # Check if the job is interesting
                 chatgpt_url = "https://chatgpt.com/"
                 sb.activate_cdp_mode(chatgpt_url)
+                sb.sleep(2)
                 
                 # Hide the login modal if it appears
                 hide_login_modal_selector = "/html/body/div[4]/div/div/div/div/div/a"
@@ -95,8 +111,9 @@ def main():
                 # chatgpt input section 
                 chatgpt_input_selector = "/html/body/div[1]/div[1]/main/div[1]/div[1]/div/div[2]/div/div/div/div[4]/form/div/div/div/div/div[1]/div[1]/div/div"
                 chatgpt_input = sb.cdp.find_element(chatgpt_input_selector)
-                prompt = make_prompt(job_title, job_description)
+                prompt = make_prompt(latest_resume, job_title, job_description)
                 chatgpt_input.send_keys(prompt)
+
                 sb.sleep(1)
                 
                 # chatgpt submit button
@@ -121,8 +138,6 @@ def main():
                             dev=chatgpt_answer_values["is_dev"], tech=chatgpt_answer_values["is_tech"], 
                             note=chatgpt_answer_values["explanation"], improvements=chatgpt_answer_values["fixes"])
                 sb.sleep(8)
-                
-                
     
     finally:
         close_connection(db_connection)

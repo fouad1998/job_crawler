@@ -26,6 +26,13 @@ schema_sql = """
       checked BOOLEAN DEFAULT FALSE,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
    );
+   
+   
+   CREATE TABLE IF NOT EXISTS resume (
+        id SERIAL PRIMARY KEY,
+        content TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+   );
 """
 
 
@@ -89,7 +96,6 @@ def create_database_if_not_exists():
 
       cursor.close()
      
-      create_tables(connection, schema_sql)
       close_connection(connection)
       
    except psycopg2.Error as error:

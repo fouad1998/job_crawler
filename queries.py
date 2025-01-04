@@ -29,7 +29,16 @@ def update_link(connection, url, mark=None, visited=None, checked=None, note=Non
    execute_prepared_query(connection, update_link_query, (mark, visited, checked, note, improvements, qualified, devops, dev, tech, url))
    
 def get_next_unvisited_link(connection):
-   get_next_unvisited_link_query = "SELECT url FROM links WHERE visited = FALSE ORDER BY created_at ASC LIMIT 1"
+   get_next_unvisited_link_query = "SELECT url FROM links WHERE visited = FALSE ORDER BY created_at desc LIMIT 1"
    result = execute_prepared_query(connection, get_next_unvisited_link_query)
    if result:
       return result[0][0]
+   
+
+def get_latest_resume(connection):
+   get_latest_resume_query = "SELECT content FROM resume ORDER BY created_at DESC LIMIT 1"
+   result = execute_prepared_query(connection, get_latest_resume_query)
+   if result:
+      return result[0][0]
+   
+   return None

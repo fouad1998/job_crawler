@@ -1,0 +1,19 @@
+main.py:155:SB
+--------------------------------------------------------------------
+Last Page: https://auth.openai.com/authorize?audience=https%3A%2F%2Fapi.openai.com%2Fv1&client_id=TdJIcbe16WoTHtN95nyywh5E4yOo6ItG&country_code=FR&device_id=464d5768-9140-4356-8994-15a1435ddfab&ext-oai-did=464d5768-9140-4356-8994-15a1435ddfab&prompt=login&redirect_uri=https%3A%2F%2Fchatgpt.com%2Fapi%2Fauth%2Fcallback%2Fopenai&response_type=code&scope=openid+email+profile+offline_access+model.request+model.read+organization.read+organization.write&screen_hint=login&state=hcnbs9B-FaCJ5pRZJohSqNp9TmFjV7j6ThleaOzMTeA&flow=treatment
+ Duration: 26.64s
+  Browser: Chrome 131.0.6778.204
+   Driver: chromedriver 131.0.6778.204
+Timestamp: 1736034665  (Unix Timestamp)
+     Date: Sunday, 5 January 2025
+     Time: 12:51:05 AM  (CEST, UTC+02:00)
+--------------------------------------------------------------------
+Traceback:
+  Traceback (most recent call last):
+  File "/home/fouad/devops_course/python/job_crawler/main.py", line 113, in main
+    chatgpt_input = sb.cdp.find_element(chatgpt_input_selector)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/fouad/devops_course/python/job_crawler/sbase_env/lib/python3.12/site-packages/seleniumbase/core/sb_cdp.py", line 165, in find_element
+    raise Exception(message)
+Exception: 
+ Element {html > body > div:nth-of-type(1) > div:nth-of-type(1) > main > div:nth-of-type(1) > div:nth-of-type(1) > div > div:nth-of-type(2) > div > div > div > div:nth-of-type(4) > form > div > div > div > div > div:nth-of-type(1) > div:nth-of-type(1) > div > div} was not found after 7 seconds!

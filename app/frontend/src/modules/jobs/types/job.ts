@@ -14,3 +14,7 @@ export type Job = {
 };
 
 export type Jobs = Job[];
+export type Resume = {
+  id: number;
+  content: string;
+};
