@@ -1,0 +1,16 @@
+main.py:136:SB
+--------------------------------------------------------------------
+Last Page: https://chatgpt.com/
+ Duration: 39.37s
+  Browser: Chrome 131.0.6778.204 / headless2
+   Driver: chromedriver 131.0.6778.204
+Timestamp: 1736005389  (Unix Timestamp)
+     Date: Saturday, 4 January 2025
+     Time: 4:43:09 PM  (CEST, UTC+02:00)
+--------------------------------------------------------------------
+Traceback:
+  Traceback (most recent call last):
+  File "/home/fouad/devops_course/python/job_crawler/main.py", line 119, in main
+    update_link(db_connection, url=url, visited=True,mark=chatgpt_answer_values["score"],
+                                                        ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+TypeError: 'NoneType' object is not subscriptable

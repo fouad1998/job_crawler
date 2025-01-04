@@ -1,5 +1,6 @@
 sbase_env
 downloaded_files
+lastest_logs
 __pycache__
 *.pyc
 *.pyo
