@@ -94,7 +94,7 @@ def main():
                 
                 # chatgpt input section 
                 chatgpt_input_selector = "/html/body/div[1]/div[1]/main/div[1]/div[1]/div/div[2]/div/div/div/div[4]/form/div/div/div/div/div[1]/div[1]/div/div"
-                chatgpt_input = sb.cdp.find_element(chatgpt_input_selector, timeout=5000)
+                chatgpt_input = sb.cdp.find_element(chatgpt_input_selector)
                 prompt = make_prompt(job_title, job_description)
                 chatgpt_input.send_keys(prompt)
                 sb.sleep(1)

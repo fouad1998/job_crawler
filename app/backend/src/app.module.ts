@@ -1,8 +1,16 @@
 import { Module } from '@nestjs/common';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
 import { JobModule } from './job/job.module';
 
 @Module({
-  imports: [JobModule],
+  imports: [
+    ServeStaticModule.forRoot({
+      rootPath: join(__dirname, '..', 'public'), // Path to your static files folder
+      exclude: ['/api/(.*)'],
+    }),
+    JobModule,
+  ],
   controllers: [],
   providers: [],
 })
