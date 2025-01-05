@@ -1,5 +1,6 @@
 export type Job = {
   id: number;
+  title?: string;
   url: string;
   mark: number;
   qualified: boolean;
@@ -10,6 +11,7 @@ export type Job = {
   improvements: string;
   visited: boolean;
   checked: boolean;
+  cover_letter?: string;
   created_at: string;
 };
 

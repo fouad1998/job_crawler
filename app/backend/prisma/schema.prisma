@@ -12,6 +12,7 @@ generator client {
 
 model links {
    id           Int      @id @default(autoincrement())
+   title        String?
    url          String   @unique
    mark         Int      @default(0)
    qualified    Boolean  @default(false)
@@ -20,6 +21,7 @@ model links {
    tech         Boolean  @default(false)
    note         String?
    improvements String?
+   cover_letter String?
    visited      Boolean  @default(false)
    checked      Boolean  @default(false)
    created_at   DateTime @default(now())

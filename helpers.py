@@ -16,8 +16,7 @@ def get_clipboard_text():
         str: Text content of the clipboard.
     """
     try:
-        text = pyperclip.paste()  # Retrieve text from clipboard
-        return text
+        return pyperclip.paste()  # Retrieve text from clipboard
     except Exception as error:
         print("Error accessing clipboard:", error)
         return ""
