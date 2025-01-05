@@ -1,14 +1,19 @@
-from seleniumbase import BaseCase
+import sys
+from concurrent.futures import ThreadPoolExecutor
 
-BaseCase.main(__name__, __file__)
+from seleniumbase import Driver
 
-class MyTestClass(BaseCase):
-    def test_demo_site(self):
-        self.open("https://seleniumbase.io/demo_page")
-        self.type("#myTextInput", "This is Automated")
-        self.click("#myButton")
-        self.assert_element("tbody#tbodyId")
-        self.assert_text("Automation Practice", "h3")
-        self.click_link("SeleniumBase Demo Page")
-        self.assert_exact_text("Demo Page", "h1")
-        self.assert_no_js_errors()
+sys.argv.append("-n")  # Tell SeleniumBase to do thread-locking as needed
+
+def launch_driver(url):
+    driver = Driver(uc=True)
+    try:
+        driver.get(url=url)
+        driver.sleep(200)
+    finally:
+        driver.quit()
+
+urls = ['https://seleniumbase.io/demo_page', "https://google.com", "https://amazon.com"]
+with ThreadPoolExecutor(max_workers=len(urls)) as executor:
+    for url in urls:
+        executor.submit(launch_driver, url)
