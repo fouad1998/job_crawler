@@ -81,3 +81,4 @@ def html_to_formatted_text(html_content):
     except Exception as error:
         print("Error converting HTML to text:", error)
         return ""
+    

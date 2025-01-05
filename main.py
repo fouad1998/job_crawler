@@ -1,3 +1,5 @@
+import queue
+import threading
 import time
 
 from seleniumbase import SB
@@ -11,6 +13,125 @@ from queries import (add_link, check_link_exists, get_latest_resume,
                      get_next_unvisited_link, update_link)
 
 
+def explorer(sb, event, questions_queue, answers_queue, db_connection):
+    # Visits the links and get the job score 
+    while True:
+        url = get_next_unvisited_link(db_connection)
+        print("Visiting link:", url)
+        if not url:
+            print("No more unvisited links")
+            event.set() # signal the end of the thread
+            break
+        
+        sb.open_new_tab()
+        sb.activate_cdp_mode(url, 4)
+        
+        # Hide the cookie banner
+        cookie_banner_selector = "/html/body/div/div/div[1]/div/div/div/div/div[2]/button"
+        cookie_banner_element = sb.cdp.find_element(cookie_banner_selector)
+        cookie_banner_element.click()
+        sb.sleep(1)
+
+        # check if the page is removed
+        page_removed_indicator_text = "Cette offre d'emploi n’est plus disponible."
+        sb.cdp.find_elements_by_text(page_removed_indicator_text)
+         
+        # job title
+        job_title = sb.cdp.get_title()
+        
+        # job description
+        job_description = ""
+        try:
+            job_description_container_selector = "/html/body/main/div[3]/div[3]/div[1]/div[2]/div"
+            job_description_container = sb.cdp.find_element(job_description_container_selector)
+            for element in job_description_container.query_selector_all("& > *"):
+                job_description += element.cdp.get_html()
+                job_description += "\n"
+            
+            job_description = html_to_formatted_text(job_description)
+            questions_queue.put((job_title, job_description))
+            while not event.is_set() or not answers_queue.empty():
+                try:
+                    chatgpt_answer_values = answers_queue.get(timeout=1)
+                    print("ChatGPT answer values:", chatgpt_answer_values)
+                    break
+                    update_link(db_connection, url=url, visited=True,mark=chatgpt_answer_values["score"],
+                                qualified=chatgpt_answer_values["value"], devops=chatgpt_answer_values["is_devops"],
+                                dev=chatgpt_answer_values["is_dev"], tech=chatgpt_answer_values["is_tech"], 
+                                note=chatgpt_answer_values["explanation"], improvements=chatgpt_answer_values["fixes"])
+                    break # break the loop and go to the next link
+                
+                except queue.Empty:
+                    continue
+                
+        except Exception as error:
+            try:
+                print("Error in getting job description:", error)
+                page_removed_indicator_text = "Cette offre d'emploi n’est plus disponible."
+                sb.cdp.find_elements_by_text(page_removed_indicator_text)
+                print("Job removed")
+                update_link(db_connection, url=url, visited=True)
+                continue
+            except Exception as error:
+                print("Error in getting job description:", error)
+                event.set() # signal the end of the thread
+                raise error
+
+def chatgpt(sb, event, questions_queue, answers_queue, latest_resume):
+    # Check if the job is interesting
+    # chatgpt_url = "https://chatgpt.com/"
+    chatgpt_url = "https://google.com/"
+    sb.activate_cdp_mode(chatgpt_url)    
+    while not event.is_set() or not questions_queue.empty():
+        try:
+            question = questions_queue.get(timeout=1)
+            (job_title, job_description) = question
+            
+            try:
+                sb.switch_to_tab(0)
+                time.sleep(5)
+                answers_queue.put({"score": 0, "value": False, "is_devops": False, "is_dev": False, "is_tech": False, "cover_letter": "", "explanation": "I am not interested in this job", "fixes": ""})
+                continue
+            
+                # Hide the login modal if it appears
+                hide_login_modal_selector = "/html/body/div[4]/div/div/div/div/div/a"
+                if sb.cdp.is_element_present(hide_login_modal_selector):
+                    hide_login_modal = sb.cdp.find_element(hide_login_modal_selector)
+                    hide_login_modal.click()
+                    sb.sleep(0.5)
+                
+                # chatgpt input section 
+                chatgpt_input_selector = "/html/body/div[1]/div[1]/main/div[1]/div[1]/div/div[2]/div/div/div/div[4]/form/div/div/div/div/div[1]/div[1]/div/div"
+                chatgpt_input = sb.cdp.find_element(chatgpt_input_selector)
+                prompt = make_prompt(latest_resume, job_title, job_description)
+                chatgpt_input.send_keys(prompt)
+
+                sb.sleep(1)
+                
+                # chatgpt submit button
+                chatgpt_submit_button_selector = "/html/body/div[1]/div[1]/main/div[1]/div[1]/div/div[2]/div/div/div/div[4]/form/div/div/div/div/div[2]/button"
+                chatgpt_submit_button = sb.cdp.find_element(chatgpt_submit_button_selector)
+                chatgpt_submit_button.click()
+                
+                # click copy button
+                chatgpt_copy_button_selector = "/html/body/div[1]/div[1]/main/div[1]/div[1]/div/div/div/div/article[2]/div/div/div[2]/div/div[2]/div/div/span[1]/button"
+                chatgpt_copy_button = sb.cdp.find_element(chatgpt_copy_button_selector, timeout=120)
+                chatgpt_copy_button.click()
+                
+                chatgpt_answer = get_clipboard_text()
+                chatgpt_answer = remove_markers(chatgpt_answer, ["```json", "```"])
+                chatgpt_answer_values = parse_json(chatgpt_answer)
+                print("ChatGPT answer values:", chatgpt_answer_values)
+                answers_queue.put(chatgpt_answer_values)
+                
+            except Exception as error:
+                print("Error in ChatGPT:", error)
+                event.set() # signal the end of the thread
+                raise error
+            
+        except queue.Empty:
+            continue
+                
 def main():
     # Database connection
     create_database_if_not_exists()
@@ -21,9 +142,10 @@ def main():
         raise "Please add a resume to the database"
 
     try:
+        page = 1
+        already_added_count = 0
         with SB(uc=True, test=True, locale_code="en", ad_block=True) as sb:
-            page = 1
-            already_added_count = 0
+            sb.maximize_window()        
             while True:
                 url = "https://www.hellowork.com/fr-fr/emploi/recherche.html?k=D%C3%A9veloppeur&k_autocomplete=http%3A%2F%2Fwww.rj.com%2FCommun%2FPost%2FDeveloppeur&l=%C3%8Ele-de-France&l_autocomplete=http%3A%2F%2Fwww.rj.com%2Fcommun%2Flocalite%2Fregion%2F11&st=relevance&c=Stage&cod=all&ray=50&d=w&p=" + str(page)
                 sb.activate_cdp_mode(url)
@@ -59,93 +181,21 @@ def main():
             
             print("next step, visit the links")
         
-        while True:
-            # Visits the links and get the job score 
-            with SB(uc=True, test=True, locale_code="en", ad_block=True) as sb:
-                url = get_next_unvisited_link(db_connection)
-                print("Visiting link:", url)
-                if not url:
-                    print("No more unvisited links")
-                    break
-                
-                sb.activate_cdp_mode(url)
-                
-                # Hide the cookie banner
-                cookie_banner_selector = "/html/body/div/div/div[1]/div/div/div/div/div[2]/button"
-                cookie_banner_element = sb.cdp.find_element(cookie_banner_selector)
-                cookie_banner_element.click()
-                sb.sleep(1)
-
-                # check if the page is removed
-                page_removed_indicator_text = "Cette offre d'emploi n’est plus disponible."
-                sb.cdp.find_elements_by_text(page_removed_indicator_text)
-                 
-                # job title
-                job_title = sb.cdp.get_title()
-                
-                # job description
-                job_description = ""
-                try:
-                    job_description_container_selector = "/html/body/main/div[3]/div[3]/div[1]/div[2]/div"
-                    job_description_container = sb.cdp.find_element(job_description_container_selector)
-                    for element in job_description_container.query_selector_all("& > *"):
-                        job_description += element.get_html()
-                        job_description += "\n"
-                    
-                    job_description = html_to_formatted_text(job_description)
-                except Exception as error:
-                    print("Error in getting job description:", error)
-                    page_removed_indicator_text = "Cette offre d'emploi n’est plus disponible."
-                    sb.cdp.find_elements_by_text(page_removed_indicator_text)
-                    print("Job removed")
-                    update_link(db_connection, url=url, visited=True)
-                    continue
-                
-
-            time.sleep(5)
-            with SB(uc=True, test=True, locale_code="en", ad_block=True, browser="") as sb:
-                # Check if the job is interesting
-                chatgpt_url = "https://chatgpt.com/"
-                sb.activate_cdp_mode(chatgpt_url)
-                
-                # Hide the login modal if it appears
-                hide_login_modal_selector = "/html/body/div[4]/div/div/div/div/div/a"
-                if sb.cdp.is_element_present(hide_login_modal_selector):
-                    hide_login_modal = sb.cdp.find_element(hide_login_modal_selector)
-                    hide_login_modal.click()
-                    sb.sleep(0.5)
-                
-                # chatgpt input section 
-                chatgpt_input_selector = "/html/body/div[1]/div[1]/main/div[1]/div[1]/div/div[2]/div/div/div/div[4]/form/div/div/div/div/div[1]/div[1]/div/div"
-                chatgpt_input = sb.cdp.find_element(chatgpt_input_selector)
-                prompt = make_prompt(latest_resume, job_title, job_description)
-                chatgpt_input.send_keys(prompt)
-
-                sb.sleep(1)
-                
-                # chatgpt submit button
-                chatgpt_submit_button_selector = "/html/body/div[1]/div[1]/main/div[1]/div[1]/div/div[2]/div/div/div/div[4]/form/div/div/div/div/div[2]/button"
-                chatgpt_submit_button = sb.cdp.find_element(chatgpt_submit_button_selector)
-                chatgpt_submit_button.click()
-                
-                # click copy button
-                chatgpt_copy_button_selector = "/html/body/div[1]/div[1]/main/div[1]/div[1]/div/div/div/div/article[2]/div/div/div[2]/div/div[2]/div/div/span[1]/button"
-                chatgpt_copy_button = sb.cdp.find_element(chatgpt_copy_button_selector, timeout=120)
-                chatgpt_copy_button.click()
-                
-                chatgpt_answer = get_clipboard_text()
-                chatgpt_answer = remove_markers(chatgpt_answer, ["```json", "```"])
-                chatgpt_answer_values = parse_json(chatgpt_answer)
-                
-                
-                print("ChatGPT answer values:", chatgpt_answer_values)
-                print("Updating link in database")
-                update_link(db_connection, url=url, visited=True,mark=chatgpt_answer_values["score"],  
-                            qualified=chatgpt_answer_values["value"], devops=chatgpt_answer_values["is_devops"],
-                            dev=chatgpt_answer_values["is_dev"], tech=chatgpt_answer_values["is_tech"], 
-                            note=chatgpt_answer_values["explanation"], improvements=chatgpt_answer_values["fixes"])
+            # Create the threads
+            questions_queue = queue.Queue()  # Thread-safe queue
+            answers_queue = queue.Queue()  # Thread-safe queue
+            stop_event = threading.Event()  # Event to signal stop
+            thread_chatgpt = threading.Thread(target=chatgpt, args=(sb, stop_event, questions_queue, answers_queue, latest_resume))
+            thread_explorer = threading.Thread(target=explorer, args=(sb, stop_event, questions_queue, answers_queue, db_connection))
             
-            time.sleep(20)
+            # Start the threads
+            thread_chatgpt.start()
+            time.sleep(2)
+            thread_explorer.start()
+            
+            # Wait for the threads to finish
+            thread_chatgpt.join()
+            thread_explorer.join()
 
     
     finally:
