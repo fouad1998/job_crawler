@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 import { JobModule } from './job/job.module';
+import { ResumeModule } from './resume/resume.module';
 
 @Module({
   imports: [
@@ -10,6 +11,7 @@ import { JobModule } from './job/job.module';
       exclude: ['/api/(.*)'],
     }),
     JobModule,
+    ResumeModule,
   ],
   controllers: [],
   providers: [],

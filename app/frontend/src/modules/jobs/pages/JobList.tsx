@@ -1,16 +1,17 @@
-import { Paper, Stack } from '@mui/material';
-import { useState } from 'react';
-import { useQuery } from 'react-query';
-import ErrorHelper from '../../common/ErrorHelper';
-import { fetchWrap } from '../../common/HttpClient/client';
-import Layout from '../../common/Layout/Layout';
-import TableHeader from '../../common/TableHeader';
-import Job from '../components/Job';
-import JobTable from '../components/JobTable/JobTable';
-import { Job as JobType, Jobs } from '../types/job';
+import { Paper, Stack } from "@mui/material";
+import { useState } from "react";
+import { useQuery } from "react-query";
+import ErrorHelper from "../../common/ErrorHelper";
+import { fetchWrap } from "../../common/HttpClient/client";
+import Layout from "../../common/Layout/Layout";
+import TableHeader from "../../common/TableHeader";
+import Job from "../components/Job";
+import JobTable from "../components/JobTable/JobTable";
+import Resume from "../components/Resume";
+import { Job as JobType, Jobs } from "../types/job";
 
 function JobList() {
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [job, setJob] = useState<JobType | null>(null);
 
   const {
@@ -18,8 +19,8 @@ function JobList() {
     isLoading,
     isError,
     refetch,
-  } = useQuery('jobs', function () {
-    return fetchWrap<Jobs>('jobs');
+  } = useQuery("jobs", function () {
+    return fetchWrap<Jobs>("jobs");
   });
 
   if (isError) {
@@ -33,10 +34,21 @@ function JobList() {
   return (
     <Layout>
       <Stack gap={2}>
-        <TableHeader title="Jobs" searchTerm={searchTerm} onSearchChange={setSearchTerm} />
+        <TableHeader
+          title="Jobs"
+          searchTerm={searchTerm}
+          onSearchChange={setSearchTerm}
+        />
         <Paper elevation={0}>
-          <JobTable jobs={jobs || []} searchTerm={searchTerm} loading={isLoading} onRow={setJob} />
+          <JobTable
+            jobs={jobs || []}
+            searchTerm={searchTerm}
+            loading={isLoading}
+            onRow={setJob}
+          />
         </Paper>
+
+        <Resume />
 
         {job && <Job {...job} onCancel={() => setJob(null)} />}
       </Stack>
