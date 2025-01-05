@@ -5,7 +5,7 @@ from seleniumbase import SB
 from database import (close_connection, connect_db,
                       create_database_if_not_exists, create_tables, schema_sql)
 from helpers import (get_clipboard_text, html_to_formatted_text, parse_json,
-                     remove_markers, split_string)
+                     remove_markers)
 from prompts import make_prompt
 from queries import (add_link, check_link_exists, get_latest_resume,
                      get_next_unvisited_link, update_link)
@@ -58,8 +58,10 @@ def main():
                     break
             
             print("next step, visit the links")
+        
+        while True:
             # Visits the links and get the job score 
-            while True:
+            with SB(uc=True, test=True, locale_code="en", ad_block=True) as sb:
                 url = get_next_unvisited_link(db_connection)
                 print("Visiting link:", url)
                 if not url:
@@ -67,6 +69,12 @@ def main():
                     break
                 
                 sb.activate_cdp_mode(url)
+                
+                # Hide the cookie banner
+                cookie_banner_selector = "/html/body/div/div/div[1]/div/div/div/div/div[2]/button"
+                cookie_banner_element = sb.cdp.find_element(cookie_banner_selector)
+                cookie_banner_element.click()
+                sb.sleep(1)
 
                 # check if the page is removed
                 page_removed_indicator_text = "Cette offre d'emploi n’est plus disponible."
@@ -74,7 +82,6 @@ def main():
                  
                 # job title
                 job_title = sb.cdp.get_title()
-                
                 
                 # job description
                 job_description = ""
@@ -94,12 +101,12 @@ def main():
                     update_link(db_connection, url=url, visited=True)
                     continue
                 
-                sb.sleep(2)
-                
+
+            time.sleep(5)
+            with SB(uc=True, test=True, locale_code="en", ad_block=True, browser="") as sb:
                 # Check if the job is interesting
                 chatgpt_url = "https://chatgpt.com/"
                 sb.activate_cdp_mode(chatgpt_url)
-                sb.sleep(2)
                 
                 # Hide the login modal if it appears
                 hide_login_modal_selector = "/html/body/div[4]/div/div/div/div/div/a"
@@ -137,7 +144,9 @@ def main():
                             qualified=chatgpt_answer_values["value"], devops=chatgpt_answer_values["is_devops"],
                             dev=chatgpt_answer_values["is_dev"], tech=chatgpt_answer_values["is_tech"], 
                             note=chatgpt_answer_values["explanation"], improvements=chatgpt_answer_values["fixes"])
-                sb.sleep(8)
+            
+            time.sleep(20)
+
     
     finally:
         close_connection(db_connection)
@@ -150,7 +159,7 @@ if __name__ == "__main__":
         try:
             main()
         except Exception as error:
-            if time.time() - start < 60:
+            if time.time() - start < 120:
                 count += 1
             else:
                 count = 1
