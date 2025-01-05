@@ -14,6 +14,7 @@ db_config = {
 schema_sql = """
    CREATE TABLE IF NOT EXISTS links (
       id SERIAL PRIMARY KEY,
+      title TEXT,
       url TEXT NOT NULL UNIQUE,
       mark INTEGER DEFAULT 0,
       qualified BOOLEAN DEFAULT FALSE,
@@ -22,9 +23,17 @@ schema_sql = """
       tech BOOLEAN DEFAULT FALSE,
       note TEXT,
       improvements TEXT,
+      cover_letter TEXT,
       visited BOOLEAN DEFAULT FALSE,
       checked BOOLEAN DEFAULT FALSE,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+   );
+   
+   
+   CREATE TABLE IF NOT EXISTS resume (
+        id SERIAL PRIMARY KEY,
+        content TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
    );
 """
 
@@ -89,7 +98,6 @@ def create_database_if_not_exists():
 
       cursor.close()
      
-      create_tables(connection, schema_sql)
       close_connection(connection)
       
    except psycopg2.Error as error:

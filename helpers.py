@@ -4,6 +4,10 @@ import pyperclip
 from bs4 import BeautifulSoup
 
 
+def split_string(s, n):
+    return [s[i:i+n] for i in range(0, len(s), n)]
+
+
 def get_clipboard_text():
     """
     Retrieve the current text from the clipboard.
@@ -12,8 +16,7 @@ def get_clipboard_text():
         str: Text content of the clipboard.
     """
     try:
-        text = pyperclip.paste()  # Retrieve text from clipboard
-        return text
+        return pyperclip.paste()  # Retrieve text from clipboard
     except Exception as error:
         print("Error accessing clipboard:", error)
         return ""
@@ -77,3 +80,4 @@ def html_to_formatted_text(html_content):
     except Exception as error:
         print("Error converting HTML to text:", error)
         return ""
+    

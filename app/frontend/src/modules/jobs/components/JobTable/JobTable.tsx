@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react';
-import Table from '../../../common/Table';
-import { Job, Jobs } from '../../types/job';
-import Actions from './Actions';
-import { tableCells } from './const';
-import DataDisplay from './DataDisplay';
+import { useEffect, useState } from "react";
+import Table from "../../../common/Table";
+import { Job, Jobs } from "../../types/job";
+import Actions from "./Actions";
+import { tableCells } from "./const";
+import DataDisplay from "./DataDisplay";
 
 type Props = {
   jobs: Jobs;
@@ -18,13 +18,24 @@ function JobTable({ jobs, searchTerm, loading, onRow }: Props) {
   });
 
   function filter() {
-    return jobs.filter(job =>
-      [job.url, job.mark, job.qualified, job.devops, job.dev, job.tech, job.note, job.improvements, job.visited, job.checked, job.created_at].some(
-        field =>
-          (field || '')
-            .toString()
-            .toLowerCase()
-            .includes(searchTerm?.toLowerCase() || '')
+    return jobs.filter((job) =>
+      [
+        job.url,
+        job.mark,
+        job.qualified,
+        job.devops,
+        job.dev,
+        job.tech,
+        job.note,
+        job.improvements,
+        job.visited,
+        job.checked,
+        job.created_at,
+      ].some((field) =>
+        (field || "")
+          .toString()
+          .toLowerCase()
+          .includes(searchTerm?.toLowerCase() || "")
       )
     );
   }
@@ -39,28 +50,32 @@ function JobTable({ jobs, searchTerm, loading, onRow }: Props) {
   return (
     <Table
       cells={tableCells}
-      items={filter().slice(state.page * state.rows, (state.page + 1) * state.rows)}
+      items={filter().slice(
+        state.page * state.rows,
+        (state.page + 1) * state.rows
+      )}
       components={[
-        DataDisplay('id'),
-        DataDisplay('url'),
-        DataDisplay('mark'),
-        DataDisplay('qualified'),
-        DataDisplay('devops'),
-        DataDisplay('dev'),
-        DataDisplay('tech'),
-        DataDisplay('note'),
-        DataDisplay('improvements'),
-        DataDisplay('visited'),
-        DataDisplay('checked'),
-        DataDisplay('created_at'),
+        DataDisplay("id"),
+        DataDisplay("title"),
+        DataDisplay("url"),
+        DataDisplay("mark"),
+        DataDisplay("qualified"),
+        DataDisplay("devops"),
+        DataDisplay("dev"),
+        DataDisplay("tech"),
+        DataDisplay("note"),
+        DataDisplay("improvements"),
+        DataDisplay("visited"),
+        DataDisplay("checked"),
+        DataDisplay("created_at"),
         Actions,
       ]}
       isLoading={loading}
       total={filter().length}
       page={state.page}
       rows={state.rows}
-      onChangePage={page => setState({ ...state, page })}
-      onChangeRows={rows => setState({ ...state, rows })}
+      onChangePage={(page) => setState({ ...state, page })}
+      onChangeRows={(rows) => setState({ ...state, rows })}
       onRow={onRow}
       withPagination
     />
