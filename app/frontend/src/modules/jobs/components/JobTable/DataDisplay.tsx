@@ -24,6 +24,7 @@ function DataDisplay(key: Keys) {
           component="a"
           target="_blank"
           href={job["url"]}
+          onClick={(e) => e.stopPropagation()}
         >
           {data}
         </Typography>

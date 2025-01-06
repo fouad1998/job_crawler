@@ -1,13 +1,13 @@
-import Body from './Body';
-import Footer from './Footer';
-import Head, { ITableHeader } from './Head';
+import Body from "./Body";
+import Footer from "./Footer";
+import Head, { ITableHeader } from "./Head";
 
-import { Box, TableContainer, TableHeadProps, Table as TableM } from '@mui/material';
-import { isFunction } from 'lodash';
-import { FC, ReactNode, useCallback, useEffect, useState } from 'react';
-import { Path } from './path';
+import { TableContainer, TableHeadProps, Table as TableM } from "@mui/material";
+import { isFunction } from "lodash";
+import { FC, ReactNode, useCallback, useEffect, useState } from "react";
+import { Path } from "./path";
 
-type SortDir = 'asc' | 'desc';
+type SortDir = "asc" | "desc";
 
 interface TableProps<T extends object> {
   items: T[];
@@ -58,12 +58,12 @@ function Table<T extends object>(props: TableProps<T>) {
 
   const [selected, setSelected] = useState<T[]>([]);
   const [orderCell, setOrderCell] = useState<Path<T>>();
-  const [orderDir, setOrderDir] = useState<SortDir>('asc');
+  const [orderDir, setOrderDir] = useState<SortDir>("asc");
 
   const onOrderHandler = useCallback(
     (cell: Path<T>) => {
       if (orderCell === cell) {
-        const nextOrder = orderDir === 'asc' ? 'desc' : 'asc';
+        const nextOrder = orderDir === "asc" ? "desc" : "asc";
         setOrderDir(nextOrder);
         if (isFunction(onCellOrder)) {
           onCellOrder(cell, nextOrder);
@@ -81,9 +81,9 @@ function Table<T extends object>(props: TableProps<T>) {
   );
 
   const onSelectHandler = useCallback(function (i: T) {
-    setSelected(state => {
+    setSelected((state) => {
       if (state.includes(i)) {
-        return state.filter(e => e !== i);
+        return state.filter((e) => e !== i);
       }
 
       return [...state, i];
@@ -92,7 +92,7 @@ function Table<T extends object>(props: TableProps<T>) {
 
   const onSelectAllHandler = useCallback(
     function () {
-      setSelected(state => {
+      setSelected((state) => {
         if (state.length === 0) {
           return [...items];
         }
@@ -105,7 +105,7 @@ function Table<T extends object>(props: TableProps<T>) {
 
   useEffect(
     function () {
-      setOrderDir(direction || 'asc');
+      setOrderDir(direction || "asc");
     },
     [direction]
   );
@@ -118,41 +118,46 @@ function Table<T extends object>(props: TableProps<T>) {
   );
 
   return (
-    <Box>
-      <TableContainer>
-        <TableM>
-          <Head
-            cells={cells}
-            orderCell={order}
-            orderDirection={direction}
-            withCheckbox={withCheckbox}
-            orderedCells={orderedCells}
-            isAllSelected={selected.length === items.length}
-            isSelection={selected.length !== 0}
-            isLoading={isLoading}
-            headProps={headProps}
-            onCellOrder={onOrderHandler}
-            onSelectAll={onSelectAllHandler}
-          />
+    <TableContainer sx={{ maxHeight: "80vh" }}>
+      <TableM stickyHeader>
+        <Head
+          cells={cells}
+          orderCell={order}
+          orderDirection={direction}
+          withCheckbox={withCheckbox}
+          orderedCells={orderedCells}
+          isAllSelected={selected.length === items.length}
+          isSelection={selected.length !== 0}
+          isLoading={isLoading}
+          headProps={headProps}
+          onCellOrder={onOrderHandler}
+          onSelectAll={onSelectAllHandler}
+        />
 
-          <Body
-            items={items}
-            cells={cells}
-            selected={selected}
-            withCheckbox={withCheckbox}
-            isLoading={isLoading}
-            components={components}
-            emptyRow={emptyRow}
-            onRow={onRow}
-            onSelect={onSelectHandler}
-          />
+        <Body
+          items={items}
+          cells={cells}
+          selected={selected}
+          withCheckbox={withCheckbox}
+          isLoading={isLoading}
+          components={components}
+          emptyRow={emptyRow}
+          onRow={onRow}
+          onSelect={onSelectHandler}
+        />
 
-          {withPagination && (
-            <Footer count={total} page={page} rowsPerPage={rows} isLoading={isLoading} onChangePage={onChangePage} onChangePerPage={onChangeRows} />
-          )}
-        </TableM>
-      </TableContainer>
-    </Box>
+        {withPagination && (
+          <Footer
+            count={total}
+            page={page}
+            rowsPerPage={rows}
+            isLoading={isLoading}
+            onChangePage={onChangePage}
+            onChangePerPage={onChangeRows}
+          />
+        )}
+      </TableM>
+    </TableContainer>
   );
 }
 

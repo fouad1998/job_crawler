@@ -20,6 +20,7 @@ function JobTable({ jobs, searchTerm, loading, onRow }: Props) {
   function filter() {
     return jobs.filter((job) =>
       [
+        job.title,
         job.url,
         job.mark,
         job.qualified,

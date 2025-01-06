@@ -1,72 +1,55 @@
-import { LoadingButton } from "@mui/lab";
-import { Skeleton, Stack, Typography } from "@mui/material";
-import ReactCodeMirror from "@uiw/react-codemirror";
-import { useEffect, useState } from "react";
-import { useMutation, useQuery } from "react-query";
-import ErrorHelper from "../../../common/ErrorHelper";
-import { fetchWrap } from "../../../common/HttpClient/client";
-import type { Resume as ResumeType } from "../../types/job";
+import { Close } from "@mui/icons-material";
+import {
+  Button,
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  Divider,
+  Typography,
+} from "@mui/material";
+import { Fragment, useState } from "react";
+import IconButton from "../../../common/IconButton";
+import Core from "./Core";
 
 function Resume() {
-  const [resume, setResume] = useState("");
+  const [open, setOpen] = useState(false);
 
-  const { data, isLoading, isError, refetch } = useQuery(
-    ["resume"],
-    async function () {
-      return fetchWrap<ResumeType>("resume");
-    }
-  );
-
-  const updateResume = useMutation(
-    function () {
-      return fetchWrap<ResumeType>("resume/update", {
-        method: "POST",
-        body: JSON.stringify({ content: resume }),
-      });
-    },
-    {
-      onSuccess() {
-        refetch();
-      },
-    }
-  );
-
-  useEffect(
-    function () {
-      if (data) {
-        setResume(data.content);
-      }
-    },
-    [data]
-  );
-
-  if (isLoading) {
-    return <Skeleton variant="rectangular" width="100%" height={100} />;
-  }
-
-  if (isError) {
-    return <ErrorHelper handler={() => refetch()} />;
+  function onClose() {
+    setOpen(false);
   }
 
   return (
-    <Stack gap={2}>
-      <Typography variant="h5">Resume</Typography>
-      <ReactCodeMirror
-        value={resume}
-        height="500px"
-        extensions={[]} // No extensions for plain text
-        onChange={setResume}
-      />
-      <Stack direction="row" justifyContent="flex-end">
-        <LoadingButton
-          loading={updateResume.isLoading}
-          onClick={() => updateResume.mutateAsync()}
-          variant="contained"
-        >
-          Update
-        </LoadingButton>
-      </Stack>
-    </Stack>
+    <Fragment>
+      <Button variant="contained" onClick={() => setOpen(true)}>
+        Update my resume
+      </Button>
+
+      <Dialog maxWidth="md" onClose={onClose} fullWidth open={open}>
+        <DialogTitle display="flex" alignItems="center">
+          <Typography
+            flex="1 1 auto"
+            display="flex"
+            justifyContent="center"
+            align="center"
+            variant="inherit"
+          >
+            Resume
+          </Typography>
+
+          <div>
+            <IconButton onClick={onClose}>
+              <Close />
+            </IconButton>
+          </div>
+        </DialogTitle>
+
+        <Divider />
+
+        <DialogContent>
+          <Core />
+        </DialogContent>
+      </Dialog>
+    </Fragment>
   );
 }
 

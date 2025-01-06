@@ -1,4 +1,4 @@
-import { Paper, Stack } from "@mui/material";
+import { Box, Paper, Stack } from "@mui/material";
 import { useState } from "react";
 import { useQuery } from "react-query";
 import ErrorHelper from "../../common/ErrorHelper";
@@ -34,11 +34,17 @@ function JobList() {
   return (
     <Layout>
       <Stack gap={2}>
-        <TableHeader
-          title="Jobs"
-          searchTerm={searchTerm}
-          onSearchChange={setSearchTerm}
-        />
+        <Stack direction="row" gap={2}>
+          <Box flex="1">
+            <TableHeader
+              title="Jobs"
+              searchTerm={searchTerm}
+              onSearchChange={setSearchTerm}
+            />
+          </Box>
+
+          <Resume />
+        </Stack>
         <Paper elevation={0}>
           <JobTable
             jobs={jobs || []}
@@ -47,8 +53,6 @@ function JobList() {
             onRow={setJob}
           />
         </Paper>
-
-        <Resume />
 
         {job && <Job {...job} onCancel={() => setJob(null)} />}
       </Stack>

@@ -76,17 +76,23 @@ function Job({
 
           <div>
             <Typography variant="h6">Remark</Typography>
-            <Typography>{note}</Typography>
+            <Typography whiteSpace="wrap" component="pre">
+              {note}
+            </Typography>
           </div>
 
           <div>
             <Typography variant="h6">Improvements</Typography>
-            <Typography>{improvements}</Typography>
+            <Typography whiteSpace="wrap" component="pre">
+              {improvements}
+            </Typography>
           </div>
 
           <div>
             <Typography variant="h6">Cover letter</Typography>
-            <Typography>{cover_letter || "—"}</Typography>
+            <Typography whiteSpace="wrap" component="pre">
+              {cover_letter || "—"}
+            </Typography>
           </div>
         </Box>
       </DialogContent>

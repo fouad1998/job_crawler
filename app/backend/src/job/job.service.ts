@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { Cron } from '@nestjs/schedule';
 import { PrismaService } from 'src/prisma.service';
 
 @Injectable()
@@ -35,5 +36,15 @@ export class JobService {
         checked: true,
       },
     });
+  }
+
+  @Cron('10 * * * * *')
+  async removeBrokenLinks() {
+    const { count } = await this.prisma.links.deleteMany({
+      where: {
+        AND: [{ visited: true }, { mark: 0 }, { qualified: false }],
+      },
+    });
+    console.log(`Removed ${count} broken links`);
   }
 }
