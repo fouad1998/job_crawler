@@ -2,5 +2,6 @@ dev:
   hosts:
     xubuntu:
       ansible_host: 192.168.122.28
-      ansible_user: xubuntu
-      ansible_ssh_pass: root
+      # ansible_user: xubuntu
+      # ansible_ssh_pass: root
+      user: job_crawler

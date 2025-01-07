@@ -1,15 +1,14 @@
-- name: Install packages
+---
+- name: Server install
   hosts: all
-  become: yes
+  remote_user: root
   tasks:
-    - name: Install packages
-      package:
-        name: "{{ packages }}"
-        state: present
-      vars:
-        packages:
-          - python3
-          - python3-pip
-          - python3-venv
-          - python3-dev
-          
+  - name: "User | Create user"
+    user:
+      name: "{{ user }}"
+      shell: /bin/bash
+  - name: User | SSH key
+    authorized_key: 
+      user: "{{ user }}"
+      state: present
+      key: "{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
